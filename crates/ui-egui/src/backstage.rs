@@ -653,9 +653,9 @@ fn home_user_banner(app: &mut SheetApp, ui: &mut Ui, user_name: &str, out: &mut 
                 ui.vertical(|ui| {
                     ui.label(RichText::new(nama).font(theme::ui_bold(14.0)).color(t.text));
                     if let Some(nik) = nik {
-                        ui.label(RichText::new(format!("NIK: {nik} • PT Bina Buah Nusantara")).font(theme::ui_font(11.5)).color(t.text_dim));
+                        ui.label(RichText::new(format!("NIK: {nik} • PT BRAM INNOVATION NETWORK & ACCESS")).font(theme::ui_font(11.5)).color(t.text_dim));
                     } else {
-                        ui.label(RichText::new("PT Bina Buah Nusantara").font(theme::ui_font(11.5)).color(t.text_dim));
+                        ui.label(RichText::new("PT BRAM INNOVATION NETWORK & ACCESS").font(theme::ui_font(11.5)).color(t.text_dim));
                     }
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -930,7 +930,7 @@ fn account(app: &mut SheetApp, ui: &mut Ui) {
     if !user_name.is_empty() {
         section(ui, lang, "User Information");
         ui.label(RichText::new(user_name).font(theme::ui_bold(15.0)).color(t.text));
-        ui.label(RichText::new("PT Bina Buah Nusantara").font(theme::ui_font(12.0)).color(t.text_dim));
+        ui.label(RichText::new("PT BRAM INNOVATION NETWORK & ACCESS").font(theme::ui_font(12.0)).color(t.text_dim));
         ui.add_space(8.0);
         if let Some(logout) = &app.services.logout {
             if ui.button(RichText::new("Keluar dari Akun").color(Color32::from_rgb(220, 38, 38))).clicked() {

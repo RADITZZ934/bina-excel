@@ -107,7 +107,7 @@ function handleApiProxy(req, res) {
               nama: `Karyawan ${nik.slice(-4)}`,
               nama_lengkap: `Karyawan Bina`,
               nama_jabatan: 'Staff Operasional',
-              cmp_desc: 'PT Bina Buah Nusantara',
+              cmp_desc: 'PT BRAM INNOVATION NETWORK & ACCESS',
               usr_id: 101,
               usr_id_karyawan: 101
             };
@@ -128,9 +128,9 @@ function handleApiProxy(req, res) {
             const profile = mockProfiles[token] || {
               nik: '202401001',
               nama: 'Karyawan Bina',
-              nama_lengkap: 'Karyawan PT Bina Buah Nusantara',
+              nama_lengkap: 'Karyawan PT BRAM INNOVATION NETWORK & ACCESS',
               nama_jabatan: 'Staff Operasional',
-              cmp_desc: 'PT Bina Buah Nusantara'
+              cmp_desc: 'PT BRAM INNOVATION NETWORK & ACCESS'
             };
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -161,7 +161,7 @@ function handleApiProxy(req, res) {
           nama: `Karyawan (${nik})`,
           nama_lengkap: `Karyawan Bina (${nik})`,
           nama_jabatan: 'Staff Operasional',
-          cmp_desc: 'PT Bina Buah Nusantara'
+          cmp_desc: 'PT BRAM INNOVATION NETWORK & ACCESS'
         };
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -181,9 +181,9 @@ function handleApiProxy(req, res) {
           data: {
             nik: '202401001',
             nama: 'Karyawan Bina',
-            nama_lengkap: 'Karyawan PT Bina Buah Nusantara',
+            nama_lengkap: 'Karyawan PT BRAM INNOVATION NETWORK & ACCESS',
             nama_jabatan: 'Staff',
-            cmp_desc: 'PT Bina Buah Nusantara'
+            cmp_desc: 'PT BRAM INNOVATION NETWORK & ACCESS'
           }
         }));
       }
