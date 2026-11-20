@@ -13,7 +13,9 @@
     TOKEN: 'bina_auth_token',
     USER: 'bina_auth_user',
     SAVED_NIK: 'bina_saved_nik',
-    GC_PREFS: 'gridcraft.prefs'
+    GC_PREFS: 'gridcraft.prefs',
+    ACTIVE_VIEW: 'bina_active_view',
+    LAST_OPENED_FILE: 'bina_last_opened_file'
   };
 
   let elements = {};
@@ -534,7 +536,7 @@
         const streamUrl = await apiGetFileDownloadUrl(file.path);
         const res = await fetch(streamUrl);
         const arrayBuf = await res.arrayBuffer();
-        openSpreadsheetWithBytes(file.name, arrayBuf);
+        openSpreadsheetWithBytes(file.name, arrayBuf, { name: file.name, path: file.path });
       } catch (err) {
         console.warn('Gagal membuka file biner:', err);
         openBlankSpreadsheet(file.name);
@@ -543,6 +545,9 @@
   }
 
   function openBlankSpreadsheet(title) {
+    sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'workspace');
+    sessionStorage.removeItem(STORAGE_KEYS.LAST_OPENED_FILE);
+    window.location.hash = 'workspace';
     if (elements.btnCreateWorkspace) {
       elements.btnCreateWorkspace.classList.add('workspace-launching');
     }
@@ -555,7 +560,12 @@
     }, 120);
   }
 
-  function openSpreadsheetWithBytes(filename, arrayBuffer) {
+  function openSpreadsheetWithBytes(filename, arrayBuffer, fileMeta = null) {
+    sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'workspace');
+    if (fileMeta) {
+      sessionStorage.setItem(STORAGE_KEYS.LAST_OPENED_FILE, JSON.stringify(fileMeta));
+    }
+    window.location.hash = 'workspace';
     window.__bina_pending_open = {
       name: filename,
       bytes: new Uint8Array(arrayBuffer)
@@ -565,6 +575,8 @@
 
   function showDashboard() {
     isEditorActive = false;
+    sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'dashboard');
+    window.location.hash = 'beranda';
     window.__bina_pending_new = false;
     window.__bina_pending_open = null;
     if (elements.loginModal) {
@@ -684,6 +696,9 @@
         id: rawUser.id || authResult.usr_id || ''
       };
 
+      sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'dashboard');
+      sessionStorage.removeItem(STORAGE_KEYS.LAST_OPENED_FILE);
+      window.location.hash = 'beranda';
       setStoredAuth(token, profile);
       isEditorActive = false;
       setAuthenticatedState(true, profile);
@@ -704,6 +719,9 @@
 
   function handleLogout() {
     if (confirm('Keluar dari akun Bina Excel?')) {
+      sessionStorage.removeItem(STORAGE_KEYS.ACTIVE_VIEW);
+      sessionStorage.removeItem(STORAGE_KEYS.LAST_OPENED_FILE);
+      window.location.hash = '';
       setStoredAuth(null, null);
       if (elements.popover) elements.popover.classList.add('hidden');
       setAuthenticatedState(false);
@@ -721,9 +739,41 @@
       return;
     }
     if (user) {
-      isEditorActive = false;
-      setAuthenticatedState(true, user);
-      showDashboard();
+      const activeView = sessionStorage.getItem(STORAGE_KEYS.ACTIVE_VIEW) || (window.location.hash === '#workspace' ? 'workspace' : 'dashboard');
+      if (activeView === 'workspace') {
+        // User sedang berada di halaman workspace saat halaman di-refresh:
+        // Tetap di workspace (jangan diarahkan kembali ke beranda)
+        isEditorActive = true;
+        window.location.hash = 'workspace';
+        syncUserToWasm(user);
+        if (elements.loginModal) elements.loginModal.classList.add('hidden');
+        if (elements.dashboard) elements.dashboard.classList.add('hidden');
+
+        // Pulihkan file cloud terakhir jika ada
+        const savedFile = sessionStorage.getItem(STORAGE_KEYS.LAST_OPENED_FILE);
+        if (savedFile) {
+          try {
+            const meta = JSON.parse(savedFile);
+            if (meta && meta.path) {
+              apiGetFileDownloadUrl(meta.path)
+                .then(url => fetch(url))
+                .then(res => res.arrayBuffer())
+                .then(buf => {
+                  window.__bina_pending_open = {
+                    name: meta.name || 'document.xlsx',
+                    bytes: new Uint8Array(buf)
+                  };
+                })
+                .catch(e => console.warn('Gagal memulihkan file cloud:', e));
+            }
+          } catch (e) {}
+        }
+      } else {
+        // Beranda default saat baru login atau sesi beranda
+        isEditorActive = false;
+        setAuthenticatedState(true, user);
+        showDashboard();
+      }
     }
   }
 
@@ -810,6 +860,17 @@
     if (savedNik && elements.nikInput) {
       elements.nikInput.value = savedNik;
     }
+
+    // Listen to hash change for browser Back / Forward navigation
+    window.addEventListener('hashchange', () => {
+      const { token } = getStoredAuth();
+      if (!token) return;
+      if (window.location.hash === '#beranda' && isEditorActive) {
+        showDashboard();
+      } else if (window.location.hash === '#workspace' && !isEditorActive) {
+        hideDashboard('workspace');
+      }
+    });
 
     checkExistingSession();
   }
