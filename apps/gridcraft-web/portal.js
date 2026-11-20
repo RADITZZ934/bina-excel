@@ -525,7 +525,11 @@
         if (elements.filesLoading) elements.filesLoading.style.display = 'none';
       }
     } else {
-      // Direct File: stream binary and open in WASM
+      // Direct File: tactile active feedback then stream binary into WASM
+      if (elements.filesList) {
+        const row = elements.filesList.querySelector(`[data-path="${file.path}"]`);
+        if (row) row.classList.add('item-launching');
+      }
       try {
         const streamUrl = await apiGetFileDownloadUrl(file.path);
         const res = await fetch(streamUrl);
@@ -539,8 +543,16 @@
   }
 
   function openBlankSpreadsheet(title) {
-    window.__bina_pending_new = true;
-    hideDashboard();
+    if (elements.btnCreateWorkspace) {
+      elements.btnCreateWorkspace.classList.add('workspace-launching');
+    }
+    setTimeout(() => {
+      window.__bina_pending_new = true;
+      hideDashboard('workspace');
+      if (elements.btnCreateWorkspace) {
+        elements.btnCreateWorkspace.classList.remove('workspace-launching');
+      }
+    }, 120);
   }
 
   function openSpreadsheetWithBytes(filename, arrayBuffer) {
@@ -548,15 +560,27 @@
       name: filename,
       bytes: new Uint8Array(arrayBuffer)
     };
-    hideDashboard();
+    hideDashboard('workspace');
   }
 
   function showDashboard() {
     isEditorActive = false;
     window.__bina_pending_new = false;
     window.__bina_pending_open = null;
-    if (elements.loginModal) elements.loginModal.classList.add('hidden');
-    if (elements.dashboard) elements.dashboard.classList.remove('hidden');
+    if (elements.loginModal) {
+      elements.loginModal.classList.add('hidden');
+    }
+    if (elements.dashboard) {
+      elements.dashboard.classList.remove('leaving-to-workspace');
+      elements.dashboard.classList.remove('hidden');
+      elements.dashboard.classList.remove('entering-page');
+      // Trigger reflow to restart entrance transition cleanly
+      void elements.dashboard.offsetWidth;
+      elements.dashboard.classList.add('entering-page');
+      setTimeout(() => {
+        if (elements.dashboard) elements.dashboard.classList.remove('entering-page');
+      }, 550);
+    }
     const { user } = getStoredAuth();
     if (user) {
       updateDashboardProfile(user);
@@ -564,9 +588,19 @@
     }
   }
 
-  function hideDashboard() {
+  function hideDashboard(destination = 'workspace') {
     isEditorActive = true;
-    if (elements.dashboard) elements.dashboard.classList.add('hidden');
+    if (elements.dashboard) {
+      if (destination === 'workspace') {
+        elements.dashboard.classList.add('leaving-to-workspace');
+      }
+      elements.dashboard.classList.add('hidden');
+      setTimeout(() => {
+        if (elements.dashboard && isEditorActive) {
+          elements.dashboard.classList.remove('leaving-to-workspace');
+        }
+      }, 420);
+    }
   }
 
   function handleFilterSearch(query) {
@@ -587,8 +621,13 @@
       window.__bina_avatar_bytes = null;
       window.__bina_pending_new = false;
       window.__bina_pending_open = null;
-      if (elements.dashboard) elements.dashboard.classList.add('hidden');
-      if (elements.loginModal) elements.loginModal.classList.remove('hidden');
+      if (elements.dashboard) {
+        elements.dashboard.classList.remove('leaving-to-workspace', 'entering-page');
+        elements.dashboard.classList.add('hidden');
+      }
+      if (elements.loginModal) {
+        elements.loginModal.classList.remove('hidden');
+      }
 
       currentStep = 'nik';
       if (elements.stepNik) {

@@ -18,6 +18,8 @@
   --bina-text-muted: #64748B;
   --bina-error: #EF4444;
   --bina-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bina-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --bina-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Base Viewport Container */
@@ -36,13 +38,23 @@
   user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   opacity: 1;
-  transition: opacity 0.35s var(--bina-ease), visibility 0.35s var(--bina-ease);
+  visibility: visible;
+  transform: scale(1) translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 0.4s var(--bina-ease-spring),
+    transform 0.4s var(--bina-ease-spring),
+    filter 0.4s var(--bina-ease-spring),
+    visibility 0.4s var(--bina-ease-spring);
+  will-change: opacity, transform, filter;
 }
 
 #bina_login_modal.hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  transform: scale(0.96) translateY(-16px);
+  filter: blur(4px);
 }
 
 /* ==========================================================================
@@ -412,13 +424,83 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.3s var(--bina-ease), visibility 0.3s var(--bina-ease);
+  transform: scale(1) translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 0.38s var(--bina-ease-spring),
+    transform 0.38s var(--bina-ease-spring),
+    filter 0.38s var(--bina-ease-spring),
+    visibility 0.38s var(--bina-ease-spring);
+  will-change: opacity, transform, filter;
 }
 
 .bina-dashboard.hidden {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  transform: scale(0.98) translateY(14px);
+  filter: blur(3px);
+}
+
+/* Transisi Khusus: Beranda -> Workspace (Zoom-out/Dissolve ke Editor) */
+.bina-dashboard.leaving-to-workspace {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: scale(1.025) translateY(-8px) !important;
+  filter: blur(4px) !important;
+}
+
+/* Transisi Masuk Beranda: Animasi elemen konten bertahap (micro-stagger mulus) */
+.bina-dashboard.entering-page .dash-topbar {
+  animation: binaFadeDown 0.38s var(--bina-ease-spring) both;
+}
+
+.bina-dashboard.entering-page .new-workspace-section {
+  animation: binaFadeUp 0.42s var(--bina-ease-spring) 0.05s both;
+}
+
+.bina-dashboard.entering-page .dash-files-section {
+  animation: binaFadeUp 0.45s var(--bina-ease-spring) 0.1s both;
+}
+
+.bina-dashboard.entering-page .dash-footer-banner {
+  animation: binaFadeIn 0.5s var(--bina-ease-spring) 0.12s both;
+}
+
+@keyframes binaFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes binaFadeDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes binaFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+#gridcraft_canvas {
+  transition: opacity 0.35s var(--bina-ease-spring), transform 0.35s var(--bina-ease-spring);
 }
 
 /* Dashboard Topbar */
@@ -687,6 +769,13 @@
   transform: translateY(0);
 }
 
+.workspace-card.workspace-launching {
+  transform: scale(0.95) !important;
+  border-color: #6366F1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+  transition: all 0.14s var(--bina-ease-spring) !important;
+}
+
 .gradient-plus {
   filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.25));
   transition: transform 0.2s ease, filter 0.2s ease;
@@ -829,6 +918,16 @@
 
 .file-row-item:hover {
   background-color: #F8FAFC;
+}
+
+.file-row-item:active {
+  transform: scale(0.995);
+}
+
+.file-row-item.item-launching {
+  background-color: #EFF6FF !important;
+  transform: scale(0.99) !important;
+  transition: all 0.14s var(--bina-ease-spring) !important;
 }
 
 .col-title {
