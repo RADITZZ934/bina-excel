@@ -13,6 +13,22 @@
   <link data-trunk rel="rust" data-bin="gridcraft-web" data-wasm-opt="z" data-weak-refs />
   
   <link rel="stylesheet" href="portal.css" />
+  <script>
+    (function() {
+      try {
+        var token = localStorage.getItem('bina_auth_token');
+        var activeView = sessionStorage.getItem('bina_active_view') || (location.hash === '#workspace' ? 'workspace' : 'dashboard');
+        if (token) {
+          document.documentElement.classList.add('bina-authenticated');
+          if (activeView === 'workspace') {
+            document.documentElement.classList.add('bina-view-workspace');
+          } else {
+            document.documentElement.classList.add('bina-view-dashboard');
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
   <style>
     html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     #gridcraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -21,6 +37,12 @@
   </style>
 </head>
 <body>
+  <!-- Top Animated Spreadsheet Loadbar (Google Sheets Style) -->
+  <div id="bina_loadbar" class="bina-loadbar active">
+    <div class="loadbar-track"></div>
+    <div class="loadbar-line"></div>
+  </div>
+
   <!-- Spreadsheet Canvas -->
   <canvas id="gridcraft_canvas"></canvas>
   <div id="gridcraft_loading">Memuat Bina Excel&hellip;</div>

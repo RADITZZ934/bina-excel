@@ -22,6 +22,85 @@
   --bina-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Anti-FOUC (Mencegah blink ke halaman login saat refresh) */
+html.bina-authenticated #bina_login_modal {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html.bina-view-dashboard #bina_dashboard {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+html.bina-view-workspace #bina_dashboard {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ==========================================================================
+   Spreadsheet Animated Top Loadbar (Google Sheets / Linear Style)
+   ========================================================================== */
+.bina-loadbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 3px;
+  z-index: 99999;
+  background: transparent;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.bina-loadbar.active {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.bina-loadbar .loadbar-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 123, 255, 0.15);
+}
+
+.bina-loadbar .loadbar-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(90deg, #1A73E8, #007BFF, #6366F1, #1A73E8);
+  background-size: 200% 100%;
+  animation: binaLoadbarIndeterminate 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes binaLoadbarIndeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+    background-position: 0% 50%;
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.7);
+    background-position: 100% 50%;
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.2);
+    background-position: 200% 50%;
+  }
+}
+
 /* Base Viewport Container */
 #bina_login_modal {
   position: fixed;

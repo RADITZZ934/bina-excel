@@ -172,8 +172,23 @@
       btnOpenLocalFile: document.getElementById('btn_open_local_file'),
       filterOwnerBtn: document.getElementById('filter_owner_dropdown'),
       filterOwnerLabel: document.getElementById('filter_owner_label'),
-      filterOwnerPopover: document.getElementById('filter_owner_popover')
+      filterOwnerPopover: document.getElementById('filter_owner_popover'),
+
+      // Top Animated Loadbar (Google Sheets style)
+      loadbar: document.getElementById('bina_loadbar')
     };
+  }
+
+  function setLoadbar(show) {
+    if (elements.loadbar) {
+      if (show) {
+        elements.loadbar.classList.add('active');
+      } else {
+        setTimeout(() => {
+          if (elements.loadbar) elements.loadbar.classList.remove('active');
+        }, 280);
+      }
+    }
   }
 
   function getStoredAuth() {
@@ -545,6 +560,7 @@
   }
 
   function openBlankSpreadsheet(title) {
+    setLoadbar(true);
     sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'workspace');
     sessionStorage.removeItem(STORAGE_KEYS.LAST_OPENED_FILE);
     window.location.hash = 'workspace';
@@ -557,10 +573,12 @@
       if (elements.btnCreateWorkspace) {
         elements.btnCreateWorkspace.classList.remove('workspace-launching');
       }
+      setTimeout(() => setLoadbar(false), 450);
     }, 120);
   }
 
   function openSpreadsheetWithBytes(filename, arrayBuffer, fileMeta = null) {
+    setLoadbar(true);
     sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'workspace');
     if (fileMeta) {
       sessionStorage.setItem(STORAGE_KEYS.LAST_OPENED_FILE, JSON.stringify(fileMeta));
@@ -571,12 +589,16 @@
       bytes: new Uint8Array(arrayBuffer)
     };
     hideDashboard('workspace');
+    setTimeout(() => setLoadbar(false), 550);
   }
 
   function showDashboard() {
     isEditorActive = false;
     sessionStorage.setItem(STORAGE_KEYS.ACTIVE_VIEW, 'dashboard');
     window.location.hash = 'beranda';
+    document.documentElement.classList.add('bina-authenticated', 'bina-view-dashboard');
+    document.documentElement.classList.remove('bina-view-workspace');
+    setLoadbar(false);
     window.__bina_pending_new = false;
     window.__bina_pending_open = null;
     if (elements.loginModal) {
@@ -602,6 +624,10 @@
 
   function hideDashboard(destination = 'workspace') {
     isEditorActive = true;
+    if (destination === 'workspace') {
+      document.documentElement.classList.add('bina-authenticated', 'bina-view-workspace');
+      document.documentElement.classList.remove('bina-view-dashboard');
+    }
     if (elements.dashboard) {
       if (destination === 'workspace') {
         elements.dashboard.classList.add('leaving-to-workspace');
@@ -624,11 +650,14 @@
   function setAuthenticatedState(isAuthenticated, user = null) {
     if (isAuthenticated && user) {
       isEditorActive = false;
+      document.documentElement.classList.add('bina-authenticated');
       syncUserToWasm(user);
       if (elements.loginModal) elements.loginModal.classList.add('hidden');
       showDashboard();
     } else {
       isEditorActive = false;
+      document.documentElement.classList.remove('bina-authenticated', 'bina-view-workspace', 'bina-view-dashboard');
+      setLoadbar(false);
       window.__bina_user = null;
       window.__bina_avatar_bytes = null;
       window.__bina_pending_new = false;
@@ -742,12 +771,17 @@
       const activeView = sessionStorage.getItem(STORAGE_KEYS.ACTIVE_VIEW) || (window.location.hash === '#workspace' ? 'workspace' : 'dashboard');
       if (activeView === 'workspace') {
         // User sedang berada di halaman workspace saat halaman di-refresh:
-        // Tetap di workspace (jangan diarahkan kembali ke beranda)
+        // Tetap di workspace (anti-blink: html.bina-view-workspace sudah aktif sejak <head>)
         isEditorActive = true;
         window.location.hash = 'workspace';
+        document.documentElement.classList.add('bina-authenticated', 'bina-view-workspace');
+        document.documentElement.classList.remove('bina-view-dashboard');
         syncUserToWasm(user);
         if (elements.loginModal) elements.loginModal.classList.add('hidden');
         if (elements.dashboard) elements.dashboard.classList.add('hidden');
+
+        // Tampilkan loadbar sebentar sampai file / canvas siap
+        setLoadbar(true);
 
         // Pulihkan file cloud terakhir jika ada
         const savedFile = sessionStorage.getItem(STORAGE_KEYS.LAST_OPENED_FILE);
@@ -763,10 +797,20 @@
                     name: meta.name || 'document.xlsx',
                     bytes: new Uint8Array(buf)
                   };
+                  setTimeout(() => setLoadbar(false), 450);
                 })
-                .catch(e => console.warn('Gagal memulihkan file cloud:', e));
+                .catch(e => {
+                  console.warn('Gagal memulihkan file cloud:', e);
+                  setLoadbar(false);
+                });
+            } else {
+              setTimeout(() => setLoadbar(false), 450);
             }
-          } catch (e) {}
+          } catch (e) {
+            setTimeout(() => setLoadbar(false), 450);
+          }
+        } else {
+          setTimeout(() => setLoadbar(false), 450);
         }
       } else {
         // Beranda default saat baru login atau sesi beranda
@@ -872,6 +916,14 @@
       }
     });
 
+    // Dismiss initial loadbar once trunk / wasm starts
+    window.addEventListener('TrunkApplicationStarted', () => {
+      setLoadbar(false);
+    });
+    setTimeout(() => {
+      setLoadbar(false);
+    }, 1500);
+
     checkExistingSession();
   }
 
@@ -889,6 +941,7 @@
     showDashboard: showDashboard,
     hideDashboard: hideDashboard,
     openBlank: openBlankSpreadsheet,
-    openFileBytes: openSpreadsheetWithBytes
+    openFileBytes: openSpreadsheetWithBytes,
+    setLoadbar: setLoadbar
   };
 })();
