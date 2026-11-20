@@ -40,6 +40,7 @@ impl SheetApp {
             message: None,
             toast: None,
             notice: None,
+            user_avatar: None,
             services,
             printing: Default::default(),
             print_feedback_seen: None,

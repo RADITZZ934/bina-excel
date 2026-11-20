@@ -44,6 +44,10 @@ pub struct Services {
     /// Web: hand PDF bytes to the browser's print flow directly (no download,
     /// no intermediate file) — opens the system print dialog on that PDF.
     pub print: Option<PrintPdf>,
+    /// Web / Desktop: callback to log out of the current user session and return to the login screen.
+    pub logout: Option<Box<dyn Fn()>>,
+    /// Web / Desktop: callback to return to the workspace home dashboard.
+    pub home_dashboard: Option<Box<dyn Fn()>>,
 }
 
 /// Shared queue of files read asynchronously (browser file picker, drag and drop).

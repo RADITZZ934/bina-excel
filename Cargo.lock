@@ -2361,6 +2361,7 @@ dependencies = [
  "egui",
  "gridcraft-engine",
  "gridcraft-ui-egui",
+ "image",
  "js-sys",
  "log",
  "rfd",

@@ -180,8 +180,18 @@ pub fn show(app: &mut SheetApp, ui: &mut Ui) {
             }
             ui.add_space(10.0);
             for page in [Page::Home, Page::New, Page::Open] {
-                if nav_item(ui, page.icon(), lang.tr(page.label()), bs.page == page, nav_text, nav_sel).clicked() {
-                    out.page = Some(page);
+                let label = if page == Page::Home && app.services.home_dashboard.is_some() {
+                    "Beranda"
+                } else {
+                    lang.tr(page.label())
+                };
+                if nav_item(ui, page.icon(), label, bs.page == page, nav_text, nav_sel).clicked() {
+                    if page == Page::Home && let Some(home_dashboard) = &app.services.home_dashboard {
+                        home_dashboard();
+                        out.close = true;
+                    } else {
+                        out.page = Some(page);
+                    }
                 }
             }
             nav_separator(ui, nav_text);
@@ -203,11 +213,24 @@ pub fn show(app: &mut SheetApp, ui: &mut Ui) {
                     out.close = true;
                 }
             }
-            // Bottom up: Account sits just above Options, as in Excel.
+            // Bottom up: Logout, Options, Account, and User profile.
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+                if let Some(logout) = &app.services.logout {
+                    if nav_item(ui, Icon::Close, "Keluar", false, nav_text, nav_sel).clicked() {
+                        logout();
+                        out.close = true;
+                    }
+                }
                 for page in [Page::Options, Page::Account] {
                     if nav_item(ui, page.icon(), lang.tr(page.label()), bs.page == page, nav_text, nav_sel).clicked() {
                         out.page = Some(page);
+                    }
+                }
+                let user_name = app.session.prefs.user_name.trim().to_string();
+                if !user_name.is_empty() {
+                    nav_separator(ui, nav_text);
+                    if nav_user_badge(app, ui, nav_text, nav_sel).clicked() {
+                        out.page = Some(Page::Account);
                     }
                 }
             });
@@ -288,6 +311,47 @@ fn nav_separator(ui: &mut Ui, text: Color32) {
     let (rect, _) = ui.allocate_exact_size(vec2(NAV_W, 17.0), Sense::hover());
     let y = rect.center().y;
     ui.painter().line_segment([pos2(rect.left() + 20.0, y), pos2(rect.right() - 20.0, y)], Stroke::new(1.0, text.gamma_multiply(0.35)));
+}
+
+fn nav_user_badge(app: &SheetApp, ui: &mut Ui, text_color: Color32, hover_color: Color32) -> egui::Response {
+    let (rect, resp) = ui.allocate_exact_size(vec2(NAV_W, 50.0), Sense::click());
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "User profile"));
+    let p = ui.painter();
+    if resp.hovered() {
+        p.rect_filled(rect, 0.0, hover_color.gamma_multiply(0.45));
+    }
+    let raw = app.session.prefs.user_name.trim();
+    let (nama, nik) = if let Some((n, k)) = raw.split_once(" • ") {
+        (n.trim(), Some(k.trim()))
+    } else if let Some((n, k)) = raw.split_once(" (") {
+        (n.trim(), k.strip_suffix(')').map(str::trim))
+    } else {
+        (raw, None)
+    };
+    let initial = nama.chars().next().unwrap_or('K').to_uppercase().to_string();
+    let avatar_center = pos2(rect.left() + 26.0, rect.center().y);
+    let avatar_rect = Rect::from_center_size(avatar_center, vec2(30.0, 30.0));
+    if let Some(tex) = &app.user_avatar {
+        p.image(tex.id(), avatar_rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        p.circle_stroke(avatar_center, 15.0, Stroke::new(1.0, Color32::from_rgb(0, 123, 255)));
+    } else {
+        p.circle_filled(avatar_center, 15.0, Color32::from_rgb(0, 123, 255));
+        p.text(avatar_center, Align2::CENTER_CENTER, &initial, theme::ui_bold(13.0), Color32::WHITE);
+    }
+    let text_x = rect.left() + 48.0;
+    let display_nama = if nama.len() > 15 {
+        let end = nama.char_indices().nth(13).map(|(i, _)| i).unwrap_or(nama.len());
+        format!("{}…", &nama[..end])
+    } else {
+        nama.to_string()
+    };
+    if let Some(nik) = nik {
+        p.text(pos2(text_x, rect.center().y - 8.0), Align2::LEFT_CENTER, &display_nama, theme::ui_bold(12.0), text_color);
+        p.text(pos2(text_x, rect.center().y + 8.0), Align2::LEFT_CENTER, &format!("NIK: {nik}"), theme::ui_font(10.5), text_color.gamma_multiply(0.75));
+    } else {
+        p.text(pos2(text_x, rect.center().y), Align2::LEFT_CENTER, &display_nama, theme::ui_bold(12.5), text_color);
+    }
+    resp
 }
 
 // ---------------------------------------------------------------- shared pieces
@@ -430,6 +494,7 @@ fn recent_list(app: &mut SheetApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Ou
 
 /// What the file system said about a recent workbook.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(target_arch = "wasm32", allow(dead_code))]
 enum Modified {
     /// When it was last changed, in seconds since 1970.
     At(f64),
@@ -552,8 +617,72 @@ fn square_button(ui: &mut Ui, icon: Icon, label: &str) -> egui::Response {
 
 // ---------------------------------------------------------------- pages
 
+fn home_user_banner(app: &mut SheetApp, ui: &mut Ui, user_name: &str, out: &mut Outcome) {
+    let t = Tokens::get(ui.ctx());
+    let (nama, nik) = if let Some((n, k)) = user_name.split_once(" • ") {
+        (n.trim(), Some(k.trim()))
+    } else if let Some((n, k)) = user_name.split_once(" (") {
+        (n.trim(), k.strip_suffix(')').map(str::trim))
+    } else {
+        (user_name, None)
+    };
+    let initial = nama.chars().next().unwrap_or('K').to_uppercase().to_string();
+    egui::Frame::NONE
+        .fill(t.window)
+        .stroke(egui::Stroke::new(1.0, t.ribbon_border))
+        .corner_radius(8.0)
+        .inner_margin(egui::Margin::symmetric(16, 12))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                let (rect, _) = ui.allocate_exact_size(vec2(36.0, 36.0), Sense::hover());
+                let avatar_rect = Rect::from_center_size(rect.center(), vec2(36.0, 36.0));
+                if let Some(tex) = &app.user_avatar {
+                    ui.painter().image(tex.id(), avatar_rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+                    ui.painter().circle_stroke(rect.center(), 18.0, Stroke::new(1.5, Color32::from_rgb(0, 123, 255)));
+                } else {
+                    ui.painter().circle_filled(rect.center(), 18.0, Color32::from_rgb(0, 123, 255));
+                    ui.painter().text(
+                        rect.center(),
+                        Align2::CENTER_CENTER,
+                        &initial,
+                        theme::ui_bold(16.0),
+                        Color32::WHITE,
+                    );
+                }
+                ui.add_space(12.0);
+                ui.vertical(|ui| {
+                    ui.label(RichText::new(nama).font(theme::ui_bold(14.0)).color(t.text));
+                    if let Some(nik) = nik {
+                        ui.label(RichText::new(format!("NIK: {nik} • PT Bina Buah Nusantara")).font(theme::ui_font(11.5)).color(t.text_dim));
+                    } else {
+                        ui.label(RichText::new("PT Bina Buah Nusantara").font(theme::ui_font(11.5)).color(t.text_dim));
+                    }
+                });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if let Some(logout) = &app.services.logout {
+                        if ui.button(RichText::new("Keluar").font(theme::ui_font(12.5))).clicked() {
+                            logout();
+                            out.close = true;
+                        }
+                    }
+                    if let Some(home_dashboard) = &app.services.home_dashboard {
+                        if ui.button(RichText::new("← Buka Beranda").font(theme::ui_bold(12.5)).color(Color32::from_rgb(0, 123, 255))).clicked() {
+                            home_dashboard();
+                            out.close = true;
+                        }
+                    }
+                });
+            });
+        });
+}
+
 fn home(app: &mut SheetApp, ui: &mut Ui, bs: &mut Backstage, out: &mut Outcome) {
     let lang = app.ui.language;
+    let user_name = app.session.prefs.user_name.trim().to_string();
+    if !user_name.is_empty() {
+        home_user_banner(app, ui, &user_name, out);
+        ui.add_space(20.0);
+    }
     section(ui, lang, "New");
     new_tiles(app, ui, out);
     ui.add_space(22.0);
@@ -754,13 +883,13 @@ pub fn export_as(app: &mut SheetApp, fmt: &str) -> bool {
         return match app.run(id, json!({"path": path})) {
             Ok(_) => true,
             Err(e) => {
-                app.message = Some(("GridCraft".into(), crate::clean_error(&e)));
+                app.message = Some(("Bina Excel".into(), crate::clean_error(&e)));
                 false
             }
         };
     }
     if app.services.download.is_none() {
-        app.message = Some(("GridCraft".into(), "Exporting needs a file picker, which this window doesn't have.".into()));
+        app.message = Some(("Bina Excel".into(), "Exporting needs a file picker, which this window doesn't have.".into()));
         return false;
     }
     if fmt == "pdf" {
@@ -768,7 +897,7 @@ pub fn export_as(app: &mut SheetApp, fmt: &str) -> bool {
         return match app.run(id, json!({})) {
             Ok(_) => true,
             Err(e) => {
-                app.message = Some(("GridCraft".into(), crate::clean_error(&e)));
+                app.message = Some(("Bina Excel".into(), crate::clean_error(&e)));
                 false
             }
         };
@@ -787,7 +916,7 @@ pub fn export_as(app: &mut SheetApp, fmt: &str) -> bool {
             }
         }
         Err(e) => {
-            app.message = Some(("GridCraft".into(), crate::clean_error(&e)));
+            app.message = Some(("Bina Excel".into(), crate::clean_error(&e)));
             false
         }
     }
@@ -797,8 +926,21 @@ pub fn export_as(app: &mut SheetApp, fmt: &str) -> bool {
 fn account(app: &mut SheetApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let lang = app.ui.language;
+    let user_name = app.session.prefs.user_name.trim();
+    if !user_name.is_empty() {
+        section(ui, lang, "User Information");
+        ui.label(RichText::new(user_name).font(theme::ui_bold(15.0)).color(t.text));
+        ui.label(RichText::new("PT Bina Buah Nusantara").font(theme::ui_font(12.0)).color(t.text_dim));
+        ui.add_space(8.0);
+        if let Some(logout) = &app.services.logout {
+            if ui.button(RichText::new("Keluar dari Akun").color(Color32::from_rgb(220, 38, 38))).clicked() {
+                logout();
+            }
+        }
+        ui.add_space(20.0);
+    }
     section(ui, lang, "Product Information");
-    ui.label(RichText::new("GridCraft").font(theme::ui_bold(16.0)).color(t.text));
+    ui.label(RichText::new("Bina Excel").font(theme::ui_bold(16.0)).color(t.text));
     ui.add_space(8.0);
     egui::Grid::new("backstage_account").num_columns(2).spacing(vec2(18.0, 8.0)).show(ui, |ui| {
         for (label, value) in
@@ -811,13 +953,13 @@ fn account(app: &mut SheetApp, ui: &mut Ui) {
     });
     ui.add_space(18.0);
     ui.horizontal(|ui| {
-        if square_button(ui, Icon::Info, lang.tr("About GridCraft")).clicked() {
+        if square_button(ui, Icon::Info, lang.tr("About Bina Excel")).clicked() {
             app.open_dialog("about", json!({}));
         }
         ui.add_space(12.0);
         ui.vertical(|ui| {
             ui.add_space(14.0);
-            ui.label(RichText::new(lang.tr("About GridCraft")).font(theme::ui_bold(13.5)).color(t.text));
+            ui.label(RichText::new(lang.tr("About Bina Excel")).font(theme::ui_bold(13.5)).color(t.text));
             dim(ui, lang.tr("Version, contributors and the AI models that helped"));
         });
     });

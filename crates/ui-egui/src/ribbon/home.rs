@@ -578,7 +578,8 @@ fn font_combo(app: &mut SheetApp, ui: &mut Ui, st: &Style) {
     let resp = ui.add_sized([150.0, 24.0], egui::Button::new(egui::RichText::new(&name).font(theme::ui_font(12.5))));
     control_keytip(app, ui, &resp, "home.fontName");
     let forced = invoke(app, "home.fontName");
-    let items: Vec<(&str, String)> = FONTS.iter().map(|f| (*f, f.to_string())).collect();
+    let families = crate::fonts::families();
+    let items: Vec<(&str, String)> = families.iter().map(|f| (f.as_str(), f.clone())).collect();
     if let ComboResult::Picked(value) = editable_combo(ui, &resp, "font", &name, &items, forced) {
         act(app, "home.fontName", json!({"name": value}));
     }
@@ -586,22 +587,68 @@ fn font_combo(app: &mut SheetApp, ui: &mut Ui, st: &Style) {
 
 pub const FONTS: &[&str] = &[
     "Aptos",
+    "Aptos Display",
     "Aptos Narrow",
     "Arial",
+    "Arial Black",
+    "Arial Narrow",
+    "Bahnschrift",
     "Calibri",
+    "Calibri Light",
     "Cambria",
     "Candara",
+    "Century Gothic",
+    "Comic Sans MS",
     "Consolas",
+    "Constantia",
+    "Corbel",
     "Courier New",
+    "DejaVu Sans",
+    "DejaVu Serif",
+    "Droid Sans",
+    "Ebrima",
+    "Fira Code",
+    "Fira Sans",
+    "Franklin Gothic Medium",
+    "Gabriola",
+    "Gadugi",
     "Garamond",
     "Georgia",
+    "Gill Sans",
     "Helvetica",
     "Helvetica Neue",
+    "Impact",
+    "Ink Free",
+    "Inter",
+    "JetBrains Mono",
+    "Lato",
+    "Leelawadee UI",
+    "Liberation Sans",
+    "Liberation Serif",
+    "Lucida Console",
+    "Lucida Sans Unicode",
+    "Malgun Gothic",
+    "Microsoft Sans Serif",
+    "Montserrat",
+    "Noto Sans",
+    "Noto Serif",
+    "Open Sans",
+    "Palatino Linotype",
+    "Roboto",
+    "Segoe Print",
+    "Segoe Script",
     "Segoe UI",
+    "Segoe UI Semibold",
+    "Sitka Text",
+    "Source Code Pro",
+    "Source Sans Pro",
+    "Sylfaen",
     "Tahoma",
     "Times New Roman",
     "Trebuchet MS",
+    "Ubuntu",
     "Verdana",
+    "Yu Gothic",
 ];
 
 /// Excel's size box: type a size and press Enter to apply exactly that number (the command refuses

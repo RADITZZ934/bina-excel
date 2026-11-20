@@ -1,0 +1,18 @@
+{
+  "name": "bina-excel-web",
+  "version": "1.0.0",
+  "description": "Bina Excel Web Application & Portal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "cd apps/gridcraft-web && trunk build --release"
+  },
+  "keywords": [
+    "bina-excel",
+    "spreadsheet",
+    "portal"
+  ],
+  "author": "PT Bina Buah Nusantara",
+  "license": "ISC"
+}

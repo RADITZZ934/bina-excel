@@ -466,8 +466,8 @@ fn draw_checkbox(pg: &mut Page, (x, y, w, h): (f32, f32, f32, f32), k: f32, on: 
     let (bx, by) = (x + (w - s) / 2.0, y + (h - s) / 2.0);
     let corners = [[bx, by], [bx + s, by], [bx + s, by + s], [bx, by + s]];
     if on {
-        let green = [0x10, 0x7C, 0x41];
-        pg.polygon(&corners, Some(green), Some((green, 0.75 * k)));
+        let blue = [0x00, 0x6E, 0xD4];
+        pg.polygon(&corners, Some(blue), Some((blue, 0.75 * k)));
         let tick = [[bx + 0.22 * s, by + 0.52 * s], [bx + 0.42 * s, by + 0.72 * s], [bx + 0.78 * s, by + 0.30 * s]];
         pg.polyline(&tick, 0.14 * s, [0xFF, 0xFF, 0xFF], &[]);
     } else {

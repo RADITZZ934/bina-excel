@@ -251,6 +251,8 @@ pub struct SheetApp {
     pub toast: Option<(String, f64)>,
     /// Dismissible info bar under the ribbon (open-time notices).
     pub notice: Option<Notice>,
+    /// Web / Desktop: loaded employee profile photo texture for Backstage.
+    pub user_avatar: Option<egui::TextureHandle>,
     pub services: Services,
     pub printing: printing::State,
     print_feedback_seen: Option<printing::Feedback>,

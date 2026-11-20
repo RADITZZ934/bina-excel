@@ -198,8 +198,8 @@ const SHEET_TRACK: Color32 = rgb(0xD6D6D6);
 const SHEET_THUMB: Color32 = rgb(0x6B6B6B);
 const SHEET_CONTROL_HOVER: Color32 = rgb(0xE4E4E4);
 const SHEET_CONTROL_PRESSED: Color32 = rgb(0xCFCFCF);
-const SHEET_FILL: Color32 = rgb(0x107C41);
-const SHEET_FOCUS: Color32 = rgb(0x107C41);
+const SHEET_FILL: Color32 = rgb(0x0078D4);
+const SHEET_FOCUS: Color32 = rgb(0x0078D4);
 /// The PY tag on Python cells: a deep green, white text on it.
 const SHEET_PY_TAG: Color32 = rgb(0x1E6E4E);
 
@@ -222,9 +222,9 @@ impl Tokens {
             text: pick(dark, Color32::from_rgb(0x24, 0x24, 0x24), Color32::from_rgb(0xEE, 0xEE, 0xEE)),
             text_dim: pick(dark, Color32::from_rgb(0x61, 0x61, 0x61), Color32::from_rgb(0xB0, 0xB0, 0xB0)),
             text_disabled: pick(dark, Color32::from_rgb(0xB0, 0xB0, 0xB0), Color32::from_rgb(0x70, 0x70, 0x70)),
-            accent: pick(dark, Color32::from_rgb(0x10, 0x7C, 0x41), Color32::from_rgb(0x5C, 0xC5, 0x87)),
-            accent_dark: pick(dark, Color32::from_rgb(0x0B, 0x5E, 0x31), Color32::from_rgb(0x3F, 0xA8, 0x6C)),
-            accent_soft: pick(dark, Color32::from_rgb(0xDF, 0xF1, 0xE6), Color32::from_rgb(0x23, 0x45, 0x31)),
+            accent: pick(dark, Color32::from_rgb(0x00, 0x6E, 0xD4), Color32::from_rgb(0x42, 0xBF, 0xF7)),
+            accent_dark: pick(dark, Color32::from_rgb(0x00, 0x54, 0xA8), Color32::from_rgb(0x2B, 0x82, 0xC9)),
+            accent_soft: pick(dark, Color32::from_rgb(0xE0, 0xF2, 0xFE), Color32::from_rgb(0x16, 0x32, 0x4F)),
             hover: pick(dark, Color32::from_rgb(0xEB, 0xEB, 0xEB), Color32::from_rgb(0x42, 0x42, 0x42)),
             pressed: pick(dark, Color32::from_rgb(0xDD, 0xDD, 0xDD), Color32::from_rgb(0x4D, 0x4D, 0x4D)),
             separator: pick(dark, Color32::from_rgb(0xE0, 0xE0, 0xE0), Color32::from_rgb(0x48, 0x48, 0x48)),
@@ -235,11 +235,11 @@ impl Tokens {
             header_text: pick(dark, Color32::from_rgb(0x42, 0x42, 0x42), Color32::from_rgb(0xCC, 0xCC, 0xCC)),
             header_line: pick(dark, Color32::from_rgb(0xD6, 0xD6, 0xD6), Color32::from_rgb(0x45, 0x45, 0x45)),
             header_sel_bg: pick(dark, Color32::from_rgb(0xE1, 0xE1, 0xE1), Color32::from_rgb(0x45, 0x45, 0x45)),
-            header_sel_text: pick(dark, Color32::from_rgb(0x0B, 0x5E, 0x31), Color32::from_rgb(0x6F, 0xD3, 0x9A)),
-            header_all_bg: pick(dark, Color32::from_rgb(0xC8, 0xE6, 0xD3), Color32::from_rgb(0x2E, 0x55, 0x3E)),
-            sel_fill: pick(dark, Color32::from_rgba_unmultiplied(0x10, 0x7C, 0x41, 0x1C), Color32::from_rgba_unmultiplied(0x10, 0x7C, 0x41, 0x24)),
-            active_row: pick(dark, Color32::from_rgba_unmultiplied(0x10, 0x7C, 0x41, 0x2C), Color32::from_rgba_unmultiplied(0x6F, 0xD3, 0x9A, 0x30)),
-            sel_border: Color32::from_rgb(0x10, 0x7C, 0x41),
+            header_sel_text: pick(dark, Color32::from_rgb(0x00, 0x54, 0xA8), Color32::from_rgb(0x6E, 0xC5, 0xFF)),
+            header_all_bg: pick(dark, Color32::from_rgb(0xBA, 0xE6, 0xFD), Color32::from_rgb(0x1B, 0x3E, 0x61)),
+            sel_fill: pick(dark, Color32::from_rgba_unmultiplied(0x00, 0x6E, 0xD4, 0x1C), Color32::from_rgba_unmultiplied(0x42, 0xBF, 0xF7, 0x24)),
+            active_row: pick(dark, Color32::from_rgba_unmultiplied(0x00, 0x6E, 0xD4, 0x2C), Color32::from_rgba_unmultiplied(0x42, 0xBF, 0xF7, 0x30)),
+            sel_border: Color32::from_rgb(0x00, 0x6E, 0xD4),
             input_bg: pick(dark, Color32::WHITE, Color32::from_rgb(0x1F, 0x1F, 0x1F)),
             input_border: pick(dark, Color32::from_rgb(0xD1, 0xD1, 0xD1), Color32::from_rgb(0x50, 0x50, 0x50)),
             tab_bar: pick(dark, Color32::from_rgb(0xF3, 0xF3, 0xF3), Color32::from_rgb(0x29, 0x29, 0x29)),
@@ -256,7 +256,7 @@ impl Tokens {
             notice_warn_border: pick(dark, Color32::from_rgb(0xF0, 0xC3, 0x6E), Color32::from_rgb(0x7A, 0x67, 0x30)),
             notice_info_bg: pick(dark, Color32::from_rgb(0xEA, 0xF2, 0xFB), Color32::from_rgb(0x24, 0x33, 0x44)),
             notice_info_border: pick(dark, Color32::from_rgb(0xB9, 0xD2, 0xEC), Color32::from_rgb(0x3B, 0x55, 0x72)),
-            on_accent: pick(dark, Color32::WHITE, rgb(0x0F2A1A)),
+            on_accent: pick(dark, Color32::WHITE, rgb(0x0A223D)),
             cat: pick(
                 dark,
                 [rgb(0x2F6FCF), rgb(0x1E8A4C), rgb(0xC8601A), rgb(0xC8372D), rgb(0x8350C8), rgb(0x13808A), rgb(0x9C6C00), rgb(0x5A6B7D)],

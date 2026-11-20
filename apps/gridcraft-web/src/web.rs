@@ -157,6 +157,35 @@ impl eframe::App for WebShell {
                 }
             });
         }
+        self.sync_bina_profile(ctx);
+        if let Some(w) = web_sys::window() {
+            // Check for pending file to open from JS dashboard
+            if let Ok(val) = js_sys::Reflect::get(&w, &"__bina_pending_open".into()) {
+                if !val.is_undefined() && !val.is_null() {
+                    let _ = js_sys::Reflect::set(&w, &"__bina_pending_open".into(), &wasm_bindgen::JsValue::NULL);
+                    if let Ok(name_val) = js_sys::Reflect::get(&val, &"name".into()) {
+                        if let Ok(bytes_val) = js_sys::Reflect::get(&val, &"bytes".into()) {
+                            let name = name_val.as_string().unwrap_or_else(|| "document.xlsx".into());
+                            if let Ok(uint8) = bytes_val.dyn_into::<js_sys::Uint8Array>() {
+                                let vec = uint8.to_vec();
+                                if !vec.is_empty() {
+                                    self.inbox.lock().unwrap_or_else(|e| e.into_inner()).push((name, vec));
+                                    ctx.request_repaint();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Check for pending new file request from JS dashboard
+            if let Ok(val) = js_sys::Reflect::get(&w, &"__bina_pending_new".into()) {
+                if val.is_truthy() {
+                    let _ = js_sys::Reflect::set(&w, &"__bina_pending_new".into(), &wasm_bindgen::JsValue::NULL);
+                    self.app.run_or_alert("file.new", serde_json::json!({}));
+                    ctx.request_repaint();
+                }
+            }
+        }
         self.app.logic(ctx);
         // Store changed preferences straight away: a reload or closed tab runs no exit code (#1562).
         let changed = self.prefs.changed(&self.app);
@@ -183,6 +212,59 @@ impl eframe::App for WebShell {
         self.app.ui(ui);
         if let Some(bridge) = &self.bridge {
             bridge.sync(&mut self.app);
+        }
+    }
+}
+
+impl WebShell {
+    fn sync_bina_profile(&mut self, ctx: &egui::Context) {
+        let Some(w) = web_sys::window() else { return };
+        // 1. Sync User Name & NIK from window.__bina_user
+        if let Ok(user_val) = js_sys::Reflect::get(&w, &"__bina_user".into()) {
+            if !user_val.is_undefined() && !user_val.is_null() {
+                let nik = js_sys::Reflect::get(&user_val, &"nik".into()).ok().and_then(|v| v.as_string()).unwrap_or_default();
+                let nama = js_sys::Reflect::get(&user_val, &"nama".into()).ok().and_then(|v| v.as_string()).unwrap_or_default();
+                if !nik.is_empty() || !nama.is_empty() {
+                    let formatted = if !nik.is_empty() && !nama.is_empty() {
+                        format!("{nama} • {nik}")
+                    } else if !nama.is_empty() {
+                        nama
+                    } else {
+                        nik
+                    };
+                    if self.app.session.prefs.user_name != formatted {
+                        self.app.session.prefs.user_name = formatted.clone();
+                        self.prefs.keep_user_name(formatted);
+                        ctx.request_repaint();
+                    }
+                }
+            } else if self.app.session.prefs.user_name != "GridCraft User" {
+                self.app.session.prefs.user_name = "GridCraft User".to_string();
+                self.prefs.keep_user_name("GridCraft User".to_string());
+                self.app.user_avatar = None;
+                ctx.request_repaint();
+            }
+        }
+        // 2. Sync Photo Profile Texture from window.__bina_avatar_bytes
+        if self.app.user_avatar.is_none() {
+            if let Ok(bytes_val) = js_sys::Reflect::get(&w, &"__bina_avatar_bytes".into()) {
+                if let Ok(uint8) = bytes_val.dyn_into::<js_sys::Uint8Array>() {
+                    let vec = uint8.to_vec();
+                    if !vec.is_empty() {
+                        if let Ok(reader) = image::ImageReader::new(std::io::Cursor::new(vec)).with_guessed_format() {
+                            if let Ok(dyn_img) = reader.decode() {
+                                let rgba = dyn_img.into_rgba8();
+                                let color_img = egui::ColorImage::from_rgba_unmultiplied(
+                                    [rgba.width() as usize, rgba.height() as usize],
+                                    rgba.as_raw(),
+                                );
+                                self.app.user_avatar = Some(ctx.load_texture("user_avatar", color_img, egui::TextureOptions::LINEAR));
+                                ctx.request_repaint();
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -240,6 +322,16 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
             }
         })),
         inbox: Some(inbox),
+        logout: Some(Box::new(|| {
+            if let Some(_w) = web_sys::window() {
+                let _ = js_sys::eval("if (window.BinaPortal && window.BinaPortal.logout) { window.BinaPortal.logout(); }");
+            }
+        })),
+        home_dashboard: Some(Box::new(|| {
+            if let Some(_w) = web_sys::window() {
+                let _ = js_sys::eval("if (window.BinaPortal && window.BinaPortal.showDashboard) { window.BinaPortal.showDashboard(); }");
+            }
+        })),
         ..Default::default()
     }
 }
