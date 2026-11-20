@@ -553,6 +553,9 @@
 
   function showDashboard() {
     isEditorActive = false;
+    window.__bina_pending_new = false;
+    window.__bina_pending_open = null;
+    if (elements.loginModal) elements.loginModal.classList.add('hidden');
     if (elements.dashboard) elements.dashboard.classList.remove('hidden');
     const { user } = getStoredAuth();
     if (user) {
@@ -574,16 +577,17 @@
 
   function setAuthenticatedState(isAuthenticated, user = null) {
     if (isAuthenticated && user) {
+      isEditorActive = false;
       syncUserToWasm(user);
       if (elements.loginModal) elements.loginModal.classList.add('hidden');
-      if (!isEditorActive) {
-        showDashboard();
-      }
+      showDashboard();
     } else {
+      isEditorActive = false;
       window.__bina_user = null;
       window.__bina_avatar_bytes = null;
+      window.__bina_pending_new = false;
+      window.__bina_pending_open = null;
       if (elements.dashboard) elements.dashboard.classList.add('hidden');
-      if (elements.editorBackBtn) elements.editorBackBtn.classList.add('hidden');
       if (elements.loginModal) elements.loginModal.classList.remove('hidden');
 
       currentStep = 'nik';
@@ -642,7 +646,9 @@
       };
 
       setStoredAuth(token, profile);
+      isEditorActive = false;
       setAuthenticatedState(true, profile);
+      showDashboard();
 
     } catch (err) {
       console.error('Login error:', err);
@@ -676,7 +682,9 @@
       return;
     }
     if (user) {
+      isEditorActive = false;
       setAuthenticatedState(true, user);
+      showDashboard();
     }
   }
 
